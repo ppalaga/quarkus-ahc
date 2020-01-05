@@ -29,6 +29,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Dsl;
@@ -104,6 +105,24 @@ public class AhcResource {
                 .created(new URI("https://camel.apache.org/"))
                 .entity(message)
                 .build();
+    }
+
+    @Path("/get-https") // called from the test
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response getHttps() throws Exception {
+        org.asynchttpclient.Response srcResponse = asyncHttpClient.prepareGet("https://google.com/")
+                .execute().get();
+
+        ResponseBuilder result = Response
+                .status(srcResponse.getStatusCode());
+        ;
+
+        if (srcResponse.getStatusCode() == 301) {
+            result.location(URI.create(srcResponse.getHeader("location")));
+        }
+
+        return result.entity(srcResponse.getResponseBody()).build();
     }
 
 }

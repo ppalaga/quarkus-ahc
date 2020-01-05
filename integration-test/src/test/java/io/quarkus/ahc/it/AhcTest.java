@@ -51,4 +51,13 @@ class AhcTest {
                 .body(org.hamcrest.Matchers.equalTo("Hello " + name));
     }
 
+    @Test
+    public void getHttp() {
+        RestAssured.given()
+                .contentType(ContentType.TEXT)
+                .get("/ahc/get-https")
+                .then()
+                .statusCode(200);
+    }
+
 }
