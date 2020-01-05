@@ -1,0 +1,186 @@
+= Quarkus Async HTTP Client Extension
+
+A demo form https://twitter.com/ppalaga[@ppalaga's] talk about writing Quarkus extensions (http://ppalaga.github.io/presentations/200107-writing-quarkus-extensions/index.html[the slides]).
+
+[[prerequisites]]
+== Prerequisites
+
+* `git`
+* GraalVM with `native-image` command installed and `GRAALVM_HOME` environment variable set, see
+  https://quarkus.io/guides/building-native-image-guide[Building a native executable] section of the Quarkus
+  documentation.
+* If your are on Linux, `docker` is sufficient for the native mode too. Use `-Dnative -Dquarkus.native.container-runtime=docker` instead of `-Dnative`
+  if you choose this option.
+* Java 8
+* Maven 3.5.3+ (unless you use the Maven Wrapper, a.k.a. `mvnw` available in the source tree).
+
+== How to run this demo
+
+* Checkout the individual commits in the master branch one after another starting with the oldest commit.
+* Build each commit using
++
+[code,shell]
+----
+$ mvn clean verify -Dnative
+----
++
+and inspect the error messages if the build fails.
+* The solution is usually in the next commit
+
+== Some error examples
+
+With the commit that adds the tests, the tests fail in the native mode with following exception
+
+[code,shell]
+----
+[INFO] -------------------------------------------------------
+[INFO]  T E S T S
+[INFO] -------------------------------------------------------
+[INFO] Running io.quarkus.ahc.it.AhcIT
+Executing [/home/ppalaga/orgs/quarkus/quarkus-ahc-parent/integration-test/target/quarkus-ahc-integration-test-1.1.0.Final-runner, -Dquarkus.http.port=8081, -Dtest.url=http://localhost:8081, -Dquarkus.log.file.path=target/quarkus.log]
+2020-01-05 17:42:42,588 ERROR [io.qua.application] (main) Failed to start application: java.lang.IllegalArgumentException: Can't locate config file ahc-default.properties
+        at org.asynchttpclient.config.AsyncHttpClientConfigHelper$Config.parsePropertiesFile(AsyncHttpClientConfigHelper.java:54)
+        at org.asynchttpclient.config.AsyncHttpClientConfigHelper$Config.<init>(AsyncHttpClientConfigHelper.java:35)
+        at org.asynchttpclient.config.AsyncHttpClientConfigHelper.getAsyncHttpClientConfig(AsyncHttpClientConfigHelper.java:14)
+        at org.asynchttpclient.config.AsyncHttpClientConfigDefaults.defaultFollowRedirect(AsyncHttpClientConfigDefaults.java:130)
+        at org.asynchttpclient.DefaultAsyncHttpClientConfig$Builder.<init>(DefaultAsyncHttpClientConfig.java:669)
+        at org.asynchttpclient.DefaultAsyncHttpClient.<init>(DefaultAsyncHttpClient.java:71)
+        at org.asynchttpclient.Dsl.asyncHttpClient(Dsl.java:28)
+        at io.quarkus.ahc.it.AhcResource.onStart(AhcResource.java:53)
+        at io.quarkus.ahc.it.AhcResource_Observer_onStart_fd71b5e0b207b7d1ef838b94eaeff75e52b8f463.notify(AhcResource_Observer_onStart_fd71b5e0b207b7d1ef838b94eaeff75e52b8f463.zig:65)
+        at io.quarkus.arc.impl.EventImpl$Notifier.notify(EventImpl.java:224)
+        at io.quarkus.arc.impl.EventImpl.fire(EventImpl.java:65)
+        at io.quarkus.arc.runtime.LifecycleEventRunner.fireStartupEvent(LifecycleEventRunner.java:23)
+        at io.quarkus.arc.runtime.ArcRecorder.handleLifecycleEvents(ArcRecorder.java:108)
+        at io.quarkus.deployment.steps.LifecycleEventsBuildStep$startupEvent52.deploy_0(LifecycleEventsBuildStep$startupEvent52.zig:77)
+        at io.quarkus.deployment.steps.LifecycleEventsBuildStep$startupEvent52.deploy(LifecycleEventsBuildStep$startupEvent52.zig:36)
+        at io.quarkus.runner.ApplicationImpl.doStart(ApplicationImpl.zig:164)
+        at io.quarkus.runtime.Application.start(Application.java:87)
+        at io.quarkus.runtime.Application.run(Application.java:210)
+        at io.quarkus.runner.GeneratedMain.main(GeneratedMain.zig:41)
+----
+
+
+The https test added in one of the commits fails too:
+
+[source, shell]
+----
+2020-01-05 18:08:20,975 ERROR [io.qua.ver.htt.run.QuarkusErrorHandler] (executor-thread-1) HTTP Request to /ahc/get-https failed, error id: 044cfff8-f3fc-4517-9f05-84970abe2c6b-1: org.jboss.resteasy.spi.UnhandledException: java.util.concurrent.ExecutionException: java.net.ConnectException: Unexpected error: java.security.InvalidAlgorithmParameterException: the trustAnchors parameter must be non-empty
+        at org.jboss.resteasy.core.ExceptionHandler.handleApplicationException(ExceptionHandler.java:106)
+        at org.jboss.resteasy.core.ExceptionHandler.handleException(ExceptionHandler.java:372)
+        at org.jboss.resteasy.core.SynchronousDispatcher.writeException(SynchronousDispatcher.java:209)
+        at org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:496)
+        at org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:252)
+        at org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:153)
+        at org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:363)
+        at org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:156)
+        at org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:238)
+        at io.quarkus.resteasy.runtime.standalone.RequestDispatcher.service(RequestDispatcher.java:73)
+        at io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.dispatch(VertxRequestHandler.java:120)
+        at io.quarkus.resteasy.runtime.standalone.VertxRequestHandler.access$000(VertxRequestHandler.java:36)
+        at io.quarkus.resteasy.runtime.standalone.VertxRequestHandler$1.run(VertxRequestHandler.java:85)
+        at org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
+        at org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:2011)
+        at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1535)
+        at org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1395)
+        at org.jboss.threads.DelegatingRunnable.run(DelegatingRunnable.java:29)
+        at org.jboss.threads.ThreadLocalResettingRunnable.run(ThreadLocalResettingRunnable.java:29)
+        at java.lang.Thread.run(Thread.java:748)
+        at org.jboss.threads.JBossThread.run(JBossThread.java:479)
+        at com.oracle.svm.core.thread.JavaThreads.threadStartRoutine(JavaThreads.java:460)
+        at com.oracle.svm.core.posix.thread.PosixJavaThreads.pthreadStartRoutine(PosixJavaThreads.java:193)
+Caused by: java.util.concurrent.ExecutionException: java.net.ConnectException: Unexpected error: java.security.InvalidAlgorithmParameterException: the trustAnchors parameter must be non-empty
+        at java.util.concurrent.CompletableFuture.reportGet(CompletableFuture.java:357)
+        at java.util.concurrent.CompletableFuture.get(CompletableFuture.java:1908)
+        at org.asynchttpclient.netty.NettyResponseFuture.get(NettyResponseFuture.java:201)
+        at io.quarkus.ahc.it.AhcResource.getHttps(AhcResource.java:115)
+        at io.quarkus.ahc.it.AhcResource_ClientProxy.getHttps(AhcResource_ClientProxy.zig:147)
+        at java.lang.reflect.Method.invoke(Method.java:498)
+        at org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:151)
+        at org.jboss.resteasy.core.MethodInjectorImpl.lambda$invoke$3(MethodInjectorImpl.java:122)
+        at java.util.concurrent.CompletableFuture.uniApply(CompletableFuture.java:616)
+        at java.util.concurrent.CompletableFuture.uniApplyStage(CompletableFuture.java:628)
+        at java.util.concurrent.CompletableFuture.thenApply(CompletableFuture.java:1996)
+        at java.util.concurrent.CompletableFuture.thenApply(CompletableFuture.java:110)
+        at org.jboss.resteasy.core.MethodInjectorImpl.invoke(MethodInjectorImpl.java:122)
+        at org.jboss.resteasy.core.ResourceMethodInvoker.internalInvokeOnTarget(ResourceMethodInvoker.java:594)
+        at org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTargetAfterFilter(ResourceMethodInvoker.java:468)
+        at org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invokeOnTarget$2(ResourceMethodInvoker.java:421)
+        at org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:363)
+        at org.jboss.resteasy.core.ResourceMethodInvoker.invokeOnTarget(ResourceMethodInvoker.java:423)
+        at org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:391)
+        at org.jboss.resteasy.core.ResourceMethodInvoker.lambda$invoke$1(ResourceMethodInvoker.java:365)
+        at java.util.concurrent.CompletableFuture.uniComposeStage(CompletableFuture.java:995)
+        at java.util.concurrent.CompletableFuture.thenCompose(CompletableFuture.java:2137)
+        at java.util.concurrent.CompletableFuture.thenCompose(CompletableFuture.java:110)
+        at org.jboss.resteasy.core.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:365)
+        at org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:477)
+        ... 19 more
+Caused by: java.net.ConnectException: Unexpected error: java.security.InvalidAlgorithmParameterException: the trustAnchors parameter must be non-empty
+        at org.asynchttpclient.netty.channel.NettyConnectListener.onFailure(NettyConnectListener.java:179)
+        at org.asynchttpclient.netty.channel.NettyConnectListener$1.onFailure(NettyConnectListener.java:151)
+        at org.asynchttpclient.netty.SimpleFutureListener.operationComplete(SimpleFutureListener.java:26)
+        at io.netty.util.concurrent.DefaultPromise.notifyListener0(DefaultPromise.java:577)
+        at io.netty.util.concurrent.DefaultPromise.notifyListeners0(DefaultPromise.java:570)
+        at io.netty.util.concurrent.DefaultPromise.notifyListenersNow(DefaultPromise.java:549)
+        at io.netty.util.concurrent.DefaultPromise.notifyListeners(DefaultPromise.java:490)
+        at io.netty.util.concurrent.DefaultPromise.setValue0(DefaultPromise.java:615)
+        at io.netty.util.concurrent.DefaultPromise.setFailure0(DefaultPromise.java:608)
+        at io.netty.util.concurrent.DefaultPromise.tryFailure(DefaultPromise.java:117)
+        at io.netty.handler.ssl.SslHandler.handleUnwrapThrowable(SslHandler.java:1248)
+        at io.netty.handler.ssl.SslHandler.decodeJdkCompatible(SslHandler.java:1230)
+        at io.netty.handler.ssl.SslHandler.decode(SslHandler.java:1271)
+        at io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:505)
+        at io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:444)
+        at io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:283)
+        at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:374)
+        at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:360)
+        at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:352)
+        at io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1422)
+        at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:374)
+        at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:360)
+        at io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:931)
+        at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:163)
+        at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:700)
+        at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:635)
+        at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:552)
+        at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:514)
+        at io.netty.util.concurrent.SingleThreadEventExecutor$6.run(SingleThreadEventExecutor.java:1044)
+        at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
+        at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
+        at java.lang.Thread.run(Thread.java:748)
+        ... 2 more
+Caused by: java.lang.RuntimeException: Unexpected error: java.security.InvalidAlgorithmParameterException: the trustAnchors parameter must be non-empty
+        at sun.security.ssl.Handshaker.checkThrown(Handshaker.java:1519)
+        at sun.security.ssl.SSLEngineImpl.checkTaskThrown(SSLEngineImpl.java:528)
+        at sun.security.ssl.SSLEngineImpl.readNetRecord(SSLEngineImpl.java:802)
+        at sun.security.ssl.SSLEngineImpl.unwrap(SSLEngineImpl.java:766)
+        at javax.net.ssl.SSLEngine.unwrap(SSLEngine.java:624)
+        at io.netty.handler.ssl.SslHandler$SslEngineType$3.unwrap(SslHandler.java:282)
+        at io.netty.handler.ssl.SslHandler.unwrap(SslHandler.java:1329)
+        at io.netty.handler.ssl.SslHandler.decodeJdkCompatible(SslHandler.java:1224)
+        ... 22 more
+Caused by: java.lang.RuntimeException: Unexpected error: java.security.InvalidAlgorithmParameterException: the trustAnchors parameter must be non-empty
+        at sun.security.validator.PKIXValidator.<init>(PKIXValidator.java:91)
+        at sun.security.validator.Validator.getInstance(Validator.java:181)
+        at sun.security.ssl.X509TrustManagerImpl.getValidator(X509TrustManagerImpl.java:318)
+        at sun.security.ssl.X509TrustManagerImpl.checkTrustedInit(X509TrustManagerImpl.java:179)
+        at sun.security.ssl.X509TrustManagerImpl.checkTrusted(X509TrustManagerImpl.java:248)
+        at sun.security.ssl.X509TrustManagerImpl.checkServerTrusted(X509TrustManagerImpl.java:144)
+        at sun.security.ssl.ClientHandshaker.serverCertificate(ClientHandshaker.java:1626)
+        at sun.security.ssl.ClientHandshaker.processMessage(ClientHandshaker.java:223)
+        at sun.security.ssl.Handshaker.processLoop(Handshaker.java:1037)
+        at sun.security.ssl.Handshaker$1.run(Handshaker.java:970)
+        at sun.security.ssl.Handshaker$1.run(Handshaker.java:967)
+        at java.security.AccessController.doPrivileged(AccessController.java:104)
+        at sun.security.ssl.Handshaker$DelegatedTask.run(Handshaker.java:1459)
+        at io.netty.handler.ssl.SslHandler.runAllDelegatedTasks(SslHandler.java:1499)
+        at io.netty.handler.ssl.SslHandler.runDelegatedTasks(SslHandler.java:1513)
+        at io.netty.handler.ssl.SslHandler.unwrap(SslHandler.java:1397)
+        ... 23 more
+Caused by: java.security.InvalidAlgorithmParameterException: the trustAnchors parameter must be non-empty
+        at java.security.cert.PKIXParameters.setTrustAnchors(PKIXParameters.java:200)
+        at java.security.cert.PKIXParameters.<init>(PKIXParameters.java:120)
+        at java.security.cert.PKIXBuilderParameters.<init>(PKIXBuilderParameters.java:104)
+        at sun.security.validator.PKIXValidator.<init>(PKIXValidator.java:89)
+        ... 38 more
