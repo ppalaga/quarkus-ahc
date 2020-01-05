@@ -12,6 +12,10 @@
     <artifactId>quarkus-ahc-parent</artifactId>
     <name>Quarkus - AHC - Parent</name>
 
+    <properties>
+        <async-http-client.version>2.10.4</async-http-client.version>
+    </properties>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -24,6 +28,12 @@
                 <artifactId>quarkus-ahc</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.asynchttpclient</groupId>
+                <artifactId>async-http-client</artifactId>
+                <version>${async-http-client.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -31,5 +41,6 @@
     <modules>
         <module>deployment</module>
         <module>runtime</module>
+        <module>integration-test</module>
     </modules>
 </project>
