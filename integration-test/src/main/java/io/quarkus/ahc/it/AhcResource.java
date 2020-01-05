@@ -16,11 +16,10 @@
  */
 package io.quarkus.ahc.it;
 
-import java.io.IOException;
 import java.net.URI;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
+import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -32,12 +31,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
 import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.Dsl;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
-
-import io.quarkus.runtime.ShutdownEvent;
-import io.quarkus.runtime.StartupEvent;
 
 @Path("/ahc")
 @ApplicationScoped
@@ -45,24 +40,11 @@ public class AhcResource {
 
     private static final Logger LOG = Logger.getLogger(AhcResource.class);
 
+    @Inject
     private AsyncHttpClient asyncHttpClient;
 
     @ConfigProperty(name = "quarkus.http.test-port", defaultValue = "8081")
     int port;
-
-    void onStart(@Observes StartupEvent ev) {
-        asyncHttpClient = Dsl.asyncHttpClient();
-    }
-
-    void onStop(@Observes ShutdownEvent ev) {
-        if (asyncHttpClient != null) {
-            try {
-                asyncHttpClient.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
 
     @Path("/hello") // the "server" called by the AHC client
     @GET

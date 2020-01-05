@@ -1,5 +1,7 @@
 package io.quarkus.ahc.deployment;
 
+import io.quarkus.ahc.AhcProducer;
+import io.quarkus.arc.deployment.AdditionalBeanBuildItem;
 import io.quarkus.deployment.annotations.BuildStep;
 import io.quarkus.deployment.builditem.ExtensionSslNativeSupportBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
@@ -24,6 +26,11 @@ class AhcProcessor {
     @BuildStep
     ExtensionSslNativeSupportBuildItem activateSslNativeSupport() {
         return new ExtensionSslNativeSupportBuildItem(FEATURE);
+    }
+
+    @BuildStep
+    AdditionalBeanBuildItem beans() {
+        return AdditionalBeanBuildItem.unremovableOf(AhcProducer.class);
     }
 
 }
