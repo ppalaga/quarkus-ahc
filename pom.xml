@@ -13,7 +13,7 @@
     <name>Quarkus - AHC - Parent</name>
 
     <properties>
-        <async-http-client.version>2.10.4</async-http-client.version>
+        <async-http-client.version>3.0.1</async-http-client.version>
     </properties>
 
     <dependencyManagement>
